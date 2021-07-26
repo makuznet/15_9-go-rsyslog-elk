@@ -18,10 +18,10 @@ func init() {
 func main() {
 
 	// Greeting message for console users
-	fmt.Println("This api doubles the entered integer number. Enter curl -X GET http://127.0.0.1:8080/v1/numdoubles/<your_number>")
+	fmt.Println("This api doubles the entered integer number.\nEnter \"curl -X GET http://127.0.0.1:8080/v1/numdub/<your_number>\"")
 
 	// Creating a log file
-	file, err := os.OpenFile("numdub.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	file, err := os.OpenFile("/var/log/numdub.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -32,34 +32,36 @@ func main() {
 	log.SetOutput(file)
 
 	// The app adds this line every time it starts
-	log.Println("The app has been launched")
+	log.Println("Numdub has been launched")
 
 	// Run numDoubles function when receiving ip:port/v1/numdoubles/ from http
-	http.HandleFunc("/v1/numdoubles/", numDoubles)
+	http.HandleFunc("/v1/numdub/", numDub)
 
 	// the tcp port http server is listening to on all interfaces
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 // Double the number and log
-func numDoubles(w http.ResponseWriter, r *http.Request) {
+func numDub(w http.ResponseWriter, r *http.Request) {
 
 	// Greeting message for web users
-	fmt.Fprintf(w, "This api doubles the entered integer number. http://127.0.0.1:8080/v1/numdoubles/<your_number>\n")
+	fmt.Fprintf(w, "This api doubles the entered integer number.\nEnter \"curl -X GET http://127.0.0.1:8080/v1/numdub/<your_number>\"\n")
 
 	// read url from http, cut url, leave entered string value, convert it to integer, assign to num var
-	num, _ := strconv.Atoi(r.URL.Path[15:])
+	num, _ := strconv.Atoi(r.URL.Path[11:])
 
 	if r.Method != "GET" {
 		http.Error(w, "Method is not allowed", http.StatusMethodNotAllowed)
 	}
-	fmt.Println(num)
+	// fmt.Println(num)
+	log.Println("number:", num)
 
 	// ptint out entered number to http
-	fmt.Fprintf(w, "Doubled number: %d\n", num*2)
+	fmt.Fprintf(w, "number: %d\n", num*2)
 
 	// write entered number to numdub.log
-	log.WithFields(log.Fields{
-		"number": num,
-	}).Info("Number entered")
+	// log.WithFields(log.Fields{
+	// 	"number": num,
+	// }).Info("User Entered")
+
 }
