@@ -1,0 +1,21 @@
+---
+- name: Copy app binary
+  copy:
+    src: numdub
+    dest: /opt/numdub
+    mode: 0755
+  notify:
+    - restart numdub
+
+- name: Link app binary to sys path
+  file:
+    src: "/opt/numdub"
+    dest: /usr/local/bin/numdub
+    mode: 0755
+    state: link
+
+- name: Create app service file
+  copy:
+    src: numdub.service
+    dest: "/etc/systemd/system/numdub.service"
+  notify: Run n enable app service

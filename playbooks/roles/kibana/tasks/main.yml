@@ -1,0 +1,11 @@
+---
+- name: Copy kibana conf files
+  copy:
+    src: "{{ item.src_file }}"
+    dest: "{{ item.dest_file }}"
+    mode: 0640
+    group: kibana
+  loop:
+    - { src_file: "kibana.yml", dest_file: "/etc/kibana/kibana.yml" }
+  notify:
+    - restart kibana

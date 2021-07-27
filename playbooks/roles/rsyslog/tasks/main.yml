@@ -1,0 +1,25 @@
+---
+# - name: install rsyslog plugins
+#   apt:
+#     update_cache: true
+#     name: "{{ item }}"
+#     state: present
+#   loop:
+#     - rsyslog-elasticsearch
+#   notify:
+#     - restart rsyslog
+
+- name: Copy rsyslog conf files
+  copy:
+    src: "{{ item.src_file }}"
+    dest: "{{ item.dest_file }}"
+    mode: 0644
+  loop:
+    - {
+        src_file: "10-send-to-server.conf",
+        dest_file: "/etc/rsyslog.d/10-send-to-server.conf",
+      }
+  notify:
+    - restart rsyslog
+  tags:
+    - rsyslog_copyconf

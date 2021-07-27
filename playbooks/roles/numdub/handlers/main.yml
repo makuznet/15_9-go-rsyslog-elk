@@ -1,0 +1,11 @@
+---
+- name: Run n enable app service
+  service:
+    name: "numdub"
+    state: started
+    enabled: true
+
+- name: restart numdub
+  ansible.builtin.service:
+    name: "numdub"
+    state: restarted

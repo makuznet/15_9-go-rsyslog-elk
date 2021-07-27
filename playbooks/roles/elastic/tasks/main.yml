@@ -1,0 +1,50 @@
+---
+- name: install apps
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop:
+    - gnupg
+    - gnupg1
+    - gnupg2
+    # - default-jre
+    # - default-jdk
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  ansible.builtin.apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add specified repository into sources list using specified filename
+  ansible.builtin.apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+    filename: /etc/apt/sources.list.d/elastic-7.x.list
+
+- name: install apps
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop:
+    - elasticsearch
+    - kibana
+  notify:
+    - enable {{ item }}
+
+- name: Copy conf files
+  copy:
+    src: "{{ item.src_file }}"
+    dest: "{{ item.dest_file }}"
+    mode: 0660
+    group: elasticsearch
+  loop:
+    - {
+        src_file: "elasticsearch.yml",
+        dest_file: "/etc/elasticsearch/elasticsearch.yml",
+      }
+  notify:
+    - restart elastic
+  tags:
+    - copyconf

@@ -1,0 +1,12 @@
+# Managed by Ansible 
+[Unit]
+Description=golang app doubles and log entered number
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/opt/numdub
+
+[Install]
+WantedBy=multi-user.target

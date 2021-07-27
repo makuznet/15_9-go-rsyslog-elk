@@ -1,0 +1,13 @@
+---
+- name: Copy conf files
+  copy:
+    src: "{{ item.src_file }}"
+    dest: "{{ item.dest_file }}"
+    mode: 0644
+  loop:
+    - {
+        src_file: "01-main.conf",
+        dest_file: "/etc/logstash/conf.d/01-main.conf",
+      }
+  notify:
+    - restart logstash

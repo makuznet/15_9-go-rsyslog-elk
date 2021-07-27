@@ -1,0 +1,23 @@
+---
+- name: enable elasticsearch
+  service:
+    name: "elasticsearch"
+    state: started
+    enabled: true
+
+- name: enable kibana
+  service:
+    name: "kibana"
+    state: started
+    enabled: true
+
+- name: enable logstash
+  service:
+    name: "logstash"
+    state: started
+    enabled: true
+
+- name: restart elastic
+  ansible.builtin.service:
+    name: elasticsearch
+    state: restarted

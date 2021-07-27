@@ -1,0 +1,24 @@
+---
+- name: configure srv1
+  become: true
+  hosts: ya[0]
+  roles:
+    - role: numdub
+      tags: numdub
+    - role: rsyslog
+      tags: rsyslog
+    - role: sfactory
+      tags: sfactory
+
+- name: configure srv2
+  become: true
+  hosts: ya[1]
+  roles:
+    - role: rsyslog-server
+      tags: rsyslog-server
+    - role: elastic
+      tags: elastic
+    - role: kibana
+      tags: kibana
+    - role: sfactory
+      tags: sfactory
