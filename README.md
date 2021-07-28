@@ -1,4 +1,4 @@
-# Golang app with log lib sends logs via RSyslog to ELK
+# Golang app sends logs via RSyslog to ELK
 > This repo creates Server1 VPS equipped with Go app logging its input and RSyslog sending this log to Server2 VPS that receives and visualises the log with Elasticsearch and Kibana.
 
 ## Usage
@@ -23,21 +23,14 @@ Menu (top-left) > Analytics > Discover.
 
 ## Installation
 ### Clone this repo
-git clone https://github.com/makuznet/15_9-go-rsyslog-elk
-
-### Build Golang binary for Linux
-- Download and install Golang according to the [doc](https://golang.org/doc/install);  
-- Edit the .go file with your editor;
-- Compile the .go file for Linux amd64;
 ```shell
-GOOS=linux GOARCH=amd64 go build numdub.go
+git clone https://github.com/makuznet/15_9-go-rsyslog-elk
 ```
-- And move it to corresponding Ansible dir, eg. `roles/numdub/files`;
-
-### Yandex OAuth token
+### Yandex 
+#### OAuth token
 [Yandex.OAuth](https://oauth.yandex.com)
 
-### Yandex CLI (MacOS)
+#### Yandex CLI on MacOS
 ```bash
 curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
 brew install bash-completion
@@ -47,18 +40,19 @@ yc init # provide your yandex token
 yc config profile get <your_profile_name> 
 ```
 ### Terraform
-#### Instalation (MacOS)
+#### Install on MacOS
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install terraform
 ```
+#### Roll out
 To roll out and configure two VPSes go to a project folder and run:
 ```shell
 terraform init
 terraform apply --auto-approve
 ```
 ### Ansible
-#### Instalation (MacOS)
+#### Install on MacOS
 ```bash
 https://www.python.org/ftp/python/3.9.5/python-3.9.5-macosx10.9.pkg
 python get-pip.py
@@ -78,13 +72,14 @@ See playbooks/main.yml to know what roles belong to what VPS. See roles/`role_na
 Roles filebeat and logstash are absent in the final version of playbook.  
 They are kept for future use.  
 
-#### Add a line to a file task
+### Build Golang binary for Linux
+- Download and install Golang according to the [doc](https://golang.org/doc/install);  
+- Edit the .go file with your editor;
+- Compile the .go file for Linux amd64;
 ```shell
-- name: Add a line to a file
-  ansible.builtin.lineinfile:
-    path: /etc/elasticsearch/elasticsearch.yml
-    line: "discovery.type: single-node"
+GOOS=linux GOARCH=amd64 go build numdub.go
 ```
+- And move it to corresponding Ansible dir, eg. `roles/numdub/files`;
 
 ### Kibana 
 #### Create an index
@@ -118,7 +113,7 @@ See `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` for configurati
 
 Server2: Locally installed Kibana shows logs after configuring index template. 
 
-## Log libs in Golang
+### Log libs in Golang
 I tried Logrus, Zerolog, and phuslu log lib.
 Finally, I imported phuslu as this is much easier to work with than with former libs.
 ```go
@@ -138,13 +133,22 @@ With phuslu log lib:
 log.Fatal().Err(http.ListenAndServe(":8080", nil))
 ```
 
-## RSyslog
+### RSyslog
 I configured RSyslog on both servers using these two articles in Russian:
 - [RSYSLOG + ELASTICSEARCH НАСТРОЙКА RSYSLOG](https://www.casp.ru/2016/10/14/Настройка-rsyslog-storage/)  
 - [ОТПРАВКА JSON ЧЕРЕЗ RSYSLOG В ELASTICSEARCH](https://www.casp.ru/2016/10/14/json-over-rsyslog-to-elasticsearch/)  
 
 Reading `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` file I can't say I understand templates lines in full.  
 More time and experiments are needed to get them.
+
+### Ansible
+#### Add a line to a file task
+```shell
+- name: Add a line to a file
+  ansible.builtin.lineinfile:
+    path: /etc/elasticsearch/elasticsearch.yml
+    line: "discovery.type: single-node"
+```
 
 ## Acknowledgments
 This repo was inspired by [skillfactory.ru](https://skillfactory.ru/devops#syllabus) team
