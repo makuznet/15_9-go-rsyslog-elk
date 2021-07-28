@@ -6,11 +6,11 @@
 Numdub app is written in Golang.  
 The app doubles an integer number and log entered number to Syslog in JSON format using phuslu log lib that is based on Logrus lib.  
 
-If you access Numdub API via Server1 terminal run:
+If you access Numdub API via Server1 terminal, run:
 ```shell
 curl -X GET http://127.0.0.1:8080/v1/numdub/<your_number> 
 ```
-If you access Numdub API via your web browser run:
+If you access Numdub API via your web browser, run:
 ```shell
 curl -X GET http://<Server1_ip>:8080/v1/numdub/<your_number>
 ```
@@ -68,7 +68,7 @@ To decrypt files:
 ansible-vault decrypt foo.yml bar.yml baz.yml
 ```
 #### Roles
-See playbooks/main.yml to know what roles belong to what VPS. See roles/`role_name`/tasks/main.yml  to get through installation process.  
+See `playbooks/main.yml` to know what roles belong to what VPS. See `roles/role_name/tasks/main.yml` to get through installation process.  
 Roles filebeat and logstash are absent in the final version of playbook.  
 They are kept for future use.  
 
@@ -79,7 +79,7 @@ They are kept for future use.
 ```shell
 GOOS=linux GOARCH=amd64 go build numdub.go
 ```
-- And move it to corresponding Ansible dir, eg. `roles/numdub/files`;
+- And move it to `roles/numdub/files`;
 
 ### Kibana 
 #### Create an index
@@ -94,34 +94,36 @@ Then tick `syslogjson-2021.07.27` and push `Next step` button and follow instruc
 
 ## Extra
 ### The big picture
-Server1: Numdub using phuslu log lib sends logs in JSON format to the local Syslog.  
+#### Server1
+Numdub using phuslu log lib sends logs in JSON format to the local Syslog.  
 ```shell
 Jul 27 14:54:18 srv1 numdub[1032]: {"time":"2021-07-27T14:54:18.572Z","level":"info","message":"number 1"}
 Jul 27 14:54:21 srv1 numdub[1032]: {"time":"2021-07-27T14:54:21.363Z","level":"info","message":"number 2"}
 Jul 27 14:54:27 srv1 numdub[1032]: {"time":"2021-07-27T14:54:27.690Z","level":"info","message":"number 3"}
 ```
-Server1: Local RSyslog sends numdub logs to RSyslog on Server2.
-See `playbooks/roles/rsyslog/files/10-send-to-server.conf` for configuration details.
+Local RSyslog sends numdub logs to RSyslog on Server2.
+See `playbooks/roles/rsyslog/files/10-send-to-server.conf` for configuration details.  
 ```shell
 $ActionQueueType Direct # send immediately
 $ActionResumeRetryCount -1 #try sending endlessly
 $ActionQueueSaveOnShutdown on # Write to the disk in case of shutdown
 *.* @@192.168.8.20:514 # @@ — use tcp when sending logs to the RSyslog server
 ```
-Server2: Local RSyslog receives logs from Server1. Local RSyslog is equipped with omelasticsearch module that sends logs to localy installed Elasticsearch.
+#### Server2
+Local RSyslog receives logs from Server1.  
+Local RSyslog is equipped with omelasticsearch module that sends logs to localy installed Elasticsearch.  
 See `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` for configuration details.  
-
-Server2: Locally installed Kibana shows logs after configuring index template. 
+Locally installed Kibana shows logs after configuring index template.  
 
 ### Log libs in Golang
-I tried Logrus, Zerolog, and phuslu log lib.
-Finally, I imported phuslu as this is much easier to work with than with former libs.
+I tried Logrus, Zerolog, and phuslu log lib.  
+Finally, I imported phuslu as this is much easier to work with than with former libs.  
 ```go
 log.Info().Msgf("number %d", num)
 ```
-Info() means time and severity.  
-Msgf() allows include vars.  
-%d means print int var mentioned after comma that is `num` in my case.  
+Info() includes time and severity.  
+Msgf() allows include vars. Msg() — doesn't.  
+%d — digit, means print `num` var here.   
 
 Syntax changes when using a log lib.  
 Standard log:
