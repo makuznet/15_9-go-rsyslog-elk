@@ -1,66 +1,69 @@
-# Golang app with log lib sends logs to ELK
+# Golang app with log lib sends logs via RSyslog to ELK
 > This repo creates Server1 VPS equipped with Go app logging its input and RSyslog sending this log to Server2 VPS that receives and visualises the log with Elasticsearch and Kibana.
 
 ## Usage
-## Big picture
-Server1: Golang app called numdub using phuslu log lib sends logs in JSON format to the local Syslog.  
+### Run Numdub
+Numdub app is written in Golang.  
+The app doubles an integer number and log entered number to Syslog in JSON format using phuslu log lib that is based on Logrus lib.  
+
+If you access Numdub API via Server1 terminal run:
 ```shell
-Jul 27 14:54:18 srv1 numdub[1032]: {"time":"2021-07-27T14:54:18.572Z","level":"info","message":"number 1"}
-Jul 27 14:54:21 srv1 numdub[1032]: {"time":"2021-07-27T14:54:21.363Z","level":"info","message":"number 2"}
-Jul 27 14:54:27 srv1 numdub[1032]: {"time":"2021-07-27T14:54:27.690Z","level":"info","message":"number 3"}
+curl -X GET http://127.0.0.1:8080/v1/numdub/<your_number> 
 ```
-Server1: Local RSyslog sends numdub logs to RSyslog on Server2.
-See `playbooks/roles/rsyslog/files/10-send-to-server.conf` for configuration details.
+If you access Numdub API via your web browser run:
 ```shell
-$ActionQueueType Direct # send immediately
-$ActionResumeRetryCount -1 #try sending endlessly
-$ActionQueueSaveOnShutdown on # Write to the disk in case of shutdown
-*.* @@192.168.8.20:514 # @@ — use tcp when sending logs to the RSyslog server
+curl -X GET http://<Server1_ip>:8080/v1/numdub/<your_number>
 ```
-Server2: Local RSyslog receives logs from Server1. Local RSyslog is equipped with omelasticsearch module that sends logs to localy installed Elasticsearch.
-See `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` for configuration details.  
+### See logs in Kibana
+Open in your web browser:
+```shell
+http://<Server2_ip>:5601
+```  
+Menu (top-left) > Analytics > Discover.
 
-Server2: Locally installed Kibana shows logs after configuring index template. 
-
-## Logging in Golang
-I tried Logrus, Zerolog, and phuslu log lib.
-Finally, I imported phuslu as this is much easier to work with than with former libs.
-```go
-log.Info().Msgf("number %d", num)
-```
-Info() means time and severity.  
-Msgf() allows include vars.  
-%d means print int var mentioned after comma that is `num` in my case.  
-
-Syntax changes when using a log lib.  
-Standard log:
-```go
-log.Fatal(http.ListenAndServe(":8080", nil))
-```
-With phuslu log lib:
-```go
-log.Fatal().Err(http.ListenAndServe(":8080", nil))
-```
-
-
-## RSyslog
-I configured RSyslog on both servers using these two articles in Russian:
-- [RSYSLOG + ELASTICSEARCH НАСТРОЙКА RSYSLOG](https://www.casp.ru/2016/10/14/Настройка-rsyslog-storage/)  
-- [ОТПРАВКА JSON ЧЕРЕЗ RSYSLOG В ELASTICSEARCH](https://www.casp.ru/2016/10/14/json-over-rsyslog-to-elasticsearch/)  
-
-Reading `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` file I can't say I understand templates lines in full.  
-More time and experiments are needed to get them.
-
+## Installation
 ### Clone this repo
-git clone https://github...
+git clone https://github.com/makuznet/15_9-go-rsyslog-elk
 
+### Build Golang binary for Linux
+- Download and install Golang according to the [doc](https://golang.org/doc/install);  
+- Edit the .go file with your editor;
+- Compile the .go file for Linux amd64;
+```shell
+GOOS=linux GOARCH=amd64 go build numdub.go
+```
+- And move it to corresponding Ansible dir, eg. `roles/numdub/files`;
+
+### Yandex OAuth token
+[Yandex.OAuth](https://oauth.yandex.com)
+
+### Yandex CLI (MacOS)
+```bash
+curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+brew install bash-completion
+echo 'source /Users/makuznet/yandex-cloud/completion.zsh.inc' >>  ~/.zshrc
+source "/Users/makuznet/.bash_profile"
+yc init # provide your yandex token
+yc config profile get <your_profile_name> 
+```
 ### Terraform
-To roll out and configure two VPSes got to a project folderrun
+#### Instalation (MacOS)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install terraform
+```
+To roll out and configure two VPSes go to a project folder and run:
 ```shell
 terraform init
 terraform apply --auto-approve
 ```
 ### Ansible
+#### Instalation (MacOS)
+```bash
+https://www.python.org/ftp/python/3.9.5/python-3.9.5-macosx10.9.pkg
+python get-pip.py
+pip install ansible
+```
 #### Vault password
 > You'll be asked for a Vault password when Terraform launches Ansible as id_rsa and id_rsa.pub are encrypted.
 ```shell
@@ -82,53 +85,66 @@ They are kept for future use.
     path: /etc/elasticsearch/elasticsearch.yml
     line: "discovery.type: single-node"
 ```
-### Build Golang binary for Linux
-- Download and install Golang according to the [doc](https://golang.org/doc/install);  
-- Edit the .go file with your editor;
-- Compile the .go file for Linux amd64;
-```shell
-GOOS=linux GOARCH=amd64 go build numdub.go
-```
-- And move it to corresponding Ansible dir, eg. `roles/numdub/files`;
 
 ### Kibana 
-#### Creating an index
+#### Create an index
 Kibana needs an index to show logs.  
-Open http://`srv2_ip_addr`:5601 in your web browser.    
-
+Open in your web browser:
+```shell
+http://<Server2_ip>:5601
+```    
 Type `index pattern` to the `Search Elastic` search form in the middle of the top of your Kibana window.  
 Choose `Index Pattern` then `Create index pattern`.  
-Then tick `syslogjson-2021.07.27` and push `Next step` button and follow instructions. 
+Then tick `syslogjson-2021.07.27` and push `Next step` button and follow instructions.  
 
-#### See logs
-To see logs open http://`srv2_ip_addr`:5601 in your web browser.  
-Menu (top-left) > Analytics > Discover.
-
-
-## Installation
-### Yandex OAuth token
-[Yandex.OAuth](https://oauth.yandex.com)
-
-### Yandex CLI (MacOS)
-```bash
-curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-brew install bash-completion
-echo 'source /Users/makuznet/yandex-cloud/completion.zsh.inc' >>  ~/.zshrc
-source "/Users/makuznet/.bash_profile"
-yc init # provide your yandex token
-yc config profile get <your_profile_name> 
+## Extra
+### The big picture
+Server1: Numdub using phuslu log lib sends logs in JSON format to the local Syslog.  
+```shell
+Jul 27 14:54:18 srv1 numdub[1032]: {"time":"2021-07-27T14:54:18.572Z","level":"info","message":"number 1"}
+Jul 27 14:54:21 srv1 numdub[1032]: {"time":"2021-07-27T14:54:21.363Z","level":"info","message":"number 2"}
+Jul 27 14:54:27 srv1 numdub[1032]: {"time":"2021-07-27T14:54:27.690Z","level":"info","message":"number 3"}
 ```
-### Terraform (MacOS)
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install terraform
+Server1: Local RSyslog sends numdub logs to RSyslog on Server2.
+See `playbooks/roles/rsyslog/files/10-send-to-server.conf` for configuration details.
+```shell
+$ActionQueueType Direct # send immediately
+$ActionResumeRetryCount -1 #try sending endlessly
+$ActionQueueSaveOnShutdown on # Write to the disk in case of shutdown
+*.* @@192.168.8.20:514 # @@ — use tcp when sending logs to the RSyslog server
 ```
-### Ansible (MacOS)
-```bash
-https://www.python.org/ftp/python/3.9.5/python-3.9.5-macosx10.9.pkg
-python get-pip.py
-pip install ansible
+Server2: Local RSyslog receives logs from Server1. Local RSyslog is equipped with omelasticsearch module that sends logs to localy installed Elasticsearch.
+See `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` for configuration details.  
+
+Server2: Locally installed Kibana shows logs after configuring index template. 
+
+## Log libs in Golang
+I tried Logrus, Zerolog, and phuslu log lib.
+Finally, I imported phuslu as this is much easier to work with than with former libs.
+```go
+log.Info().Msgf("number %d", num)
 ```
+Info() means time and severity.  
+Msgf() allows include vars.  
+%d means print int var mentioned after comma that is `num` in my case.  
+
+Syntax changes when using a log lib.  
+Standard log:
+```go
+log.Fatal(http.ListenAndServe(":8080", nil))
+```
+With phuslu log lib:
+```go
+log.Fatal().Err(http.ListenAndServe(":8080", nil))
+```
+
+## RSyslog
+I configured RSyslog on both servers using these two articles in Russian:
+- [RSYSLOG + ELASTICSEARCH НАСТРОЙКА RSYSLOG](https://www.casp.ru/2016/10/14/Настройка-rsyslog-storage/)  
+- [ОТПРАВКА JSON ЧЕРЕЗ RSYSLOG В ELASTICSEARCH](https://www.casp.ru/2016/10/14/json-over-rsyslog-to-elasticsearch/)  
+
+Reading `playbooks/roles/rsyslog-server/files/10-remote-logger.conf` file I can't say I understand templates lines in full.  
+More time and experiments are needed to get them.
 
 ## Acknowledgments
 This repo was inspired by [skillfactory.ru](https://skillfactory.ru/devops#syllabus) team
