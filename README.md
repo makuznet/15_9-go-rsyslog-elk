@@ -101,7 +101,7 @@ Jul 27 14:54:18 srv1 numdub[1032]: {"time":"2021-07-27T14:54:18.572Z","level":"i
 Jul 27 14:54:21 srv1 numdub[1032]: {"time":"2021-07-27T14:54:21.363Z","level":"info","message":"number 2"}
 Jul 27 14:54:27 srv1 numdub[1032]: {"time":"2021-07-27T14:54:27.690Z","level":"info","message":"number 3"}
 ```
-Local RSyslog sends numdub logs to RSyslog on Server2.
+Local RSyslog sends numdub logs to RSyslog on Server2.  
 See `playbooks/roles/rsyslog/files/10-send-to-server.conf` for configuration details.  
 ```shell
 $ActionQueueType Direct # send immediately
